@@ -34,14 +34,24 @@ def Print_Menu():
 def Search_From_Excel():
     print('Searching from Excel')
 
-
-
-
 def Count_items(driver ):
     items =driver.find_elements(By.CSS_SELECTOR,'.s-main-slot div.s-result-item.s-asin.sg-col-0-of-12.sg-col-16-of-20.sg-col')
     # Search for the Asin code and opens the product details page
     products_len =len(items) 
     return products_len
+
+def Count_review_items(driver):
+    # reviews = driver.find_elements(By.CSS_SELECTOR,'.a-section.review.aok-relative')
+    # reviews = driver.find_elements(By.CSS_SELECTOR,'div.a-section.celwidget')
+    reviews = driver.find_elements(By.CSS_SELECTOR,'div.a-section.review.aok-relative')
+    reviews_id = []
+    for rev in reviews:
+        reviews_id.append(rev.get_attribute('id'))
+    reviews_len = len(reviews)
+    print(reviews_id)
+    
+    return reviews_id
+
 
 def Select_Product_Name():
     cmd = 'cls'
@@ -66,10 +76,21 @@ def Select_Product_Name():
     Search_Only_One_Product(driver,product_name,count)
     return product_name
 
-def Search_reviews(driver,rev_url):
+def Search_reviews(driver,wbFileName):
+    workbook = Workbook()
+    workbook = load_workbook(filename=wbFileName)
+    sheet = workbook.active
+    id_reviews = Count_review_items(driver)
+    count = 1
+    for id in id_reviews:
+        rating_temp = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(2) > a:nth-child(1)'.format(id))
+        rating = rating_temp.get_attribute('title')
+        comment = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)'.format(id))
+        sheet['B{}'.format(count)] = comment
+        sheet['C{}'.format(count)] = rating
+        workbook.save(wbFileName)
+        count+=1
     
-    driver.send_keys(Keys.CONTROL +'t',Keys.ENTER)
-    driver.get(rev_url)
 
 
     
@@ -109,17 +130,27 @@ def Search_Only_One_Product(driver,product_name,count):
             driver.get(new_window)
             try:
                 sheet['B{}'.format(count)] = new_window
-                reviews = driver.find_element_by_css_selector('#reviews-medley-footer > div:nth-child(2) > a:nth-child(2)')
-                                                            
+                reviews = driver.find_element_by_css_selector('#reviews-medley-footer > div:nth-child(2) > a:nth-child(2)')                                             
+                if reviews is None:
+                    print('no comments section')                                         
                 rev_url = reviews.get_attribute('href')
-                Search_reviews(driver,rev_url)
+                driver.execute_script("window.open('{}');".format(rev_url))
+                driver.switch_to.window(driver.window_handles[1])
+                Search_reviews(driver,wbFileName)    
             except:
-                pass
-                                                    
-            
+                try:
+                    reviews = driver.find_element_by_css_selector('.a-link-emphasis')
+                    if reviews is None:
+                        print('no comments section') 
+                    rev_url = reviews.get_attribute('href')
+                    driver.execute_script("window.open('{}');".format(rev_url))
+                    driver.switch_to_window(driver.window_handles[1])
+                    Search_reviews(driver,wbFileName)
+                except:
+                    pass 
+                
+
             print(i)
-
-
             driver.back()
         else:
             pass
