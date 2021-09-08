@@ -2,6 +2,7 @@ import openpyxl
 from openpyxl.cell import cell
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet import worksheet
+from openpyxl.styles import alignment
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from openpyxl import workbook,load_workbook
@@ -86,15 +87,12 @@ def Search_reviews(driver,wbFileName):
         rating_temp = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(2) > a:nth-child(1)'.format(id))
         rating = rating_temp.get_attribute('title')
         comment = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)'.format(id))
-        sheet['B{}'.format(count)] = comment
-        sheet['C{}'.format(count)] = rating
+        sheet['D{}'.format(count)] = rating
+        workbook.save(wbFileName)
+        sheet['C']
+        sheet['C{}'.format(count)] = comment
         workbook.save(wbFileName)
         count+=1
-    
-
-
-    
-
 
 def Search_Only_One_Product(driver,product_name,count):
 
@@ -122,6 +120,7 @@ def Search_Only_One_Product(driver,product_name,count):
             sleep(1)                                                            
             print(product)
             sheet['A{}'.format(count)] = product
+            workbook.save(wbFileName)
         except:
             pass
                                       
@@ -130,6 +129,7 @@ def Search_Only_One_Product(driver,product_name,count):
             driver.get(new_window)
             try:
                 sheet['B{}'.format(count)] = new_window
+                workbook.save(wbFileName)
                 reviews = driver.find_element_by_css_selector('#reviews-medley-footer > div:nth-child(2) > a:nth-child(2)')                                             
                 if reviews is None:
                     print('no comments section')                                         
