@@ -44,14 +44,19 @@ def Count_items(driver):
 def Count_review_items(driver):
     # reviews = driver.find_elements(By.CSS_SELECTOR,'.a-section.review.aok-relative')
     # reviews = driver.find_elements(By.CSS_SELECTOR,'div.a-section.celwidget')
-    reviews = driver.find_elements(By.CSS_SELECTOR,'div.a-section.review.aok-relative')
-    reviews_id = []
-    for rev in reviews:
-        reviews_id.append(rev.get_attribute('id'))
-    reviews_len = len(reviews)
-    print(reviews_id)
-    count = 1 
-    return reviews_id
+    try:
+        reviews = driver.find_elements(By.CSS_SELECTOR,'div.a-section.review.aok-relative')
+        reviews_id = []
+        for rev in reviews:
+            reviews_id.append(rev.get_attribute('id'))
+        reviews_len = len(reviews)
+        print(reviews_id)
+        print('Counting Function is Ok')
+        
+        return reviews_id
+    except:
+        return
+    
 
 
 def Select_Product_Name():
@@ -86,16 +91,33 @@ def Search_reviews(driver,wbFileName,count):
         print(count)
         for id in id_reviews:
             rating_temp = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(2) > a:nth-child(1)'.format(id))
+            print('No problem in rating')
             rating = rating_temp.get_attribute('title')
             comment = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)'.format(id)).text
+                                                           #customer_review-R1Z1ND7F1W9S72 > div:nth-child(5) > span:nth-child(1) > span:nth-child(4) 
+                                                           #customer_review-R2M5YDOR2O12ZP > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)
+                                                           #customer_review-R3IWYTJR26M1NJ > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)
+                                                           #customer_review-R2M5YDOR2O12ZP > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)
+                                                           #customer_review-R1Z1ND7F1W9S72 > div:nth-child(5) > span:nth-child(1) > span:nth-child(4)
+                                                           #customer_review-R171CAS9KYGT72 > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)
+                                                           
+                                                           
+            if comment is None:
+                comment = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(5) > span:nth-child(1) > span:nth-child(4)'.format(id)).text
+           
+            print('No problem in Comment')
             print(comment)
             sheet['D{}'.format(count)] = rating
+            print('no problem in rating in excel')
             workbook.save(wbFileName)
             sheet['C{}'.format(count)] = comment
+            print('no problem in commment excel')
             workbook.save(wbFileName)
             count+=1
+            sleep(3)
         try:
             next_page_review = driver.find_element_by_css_selector('.a-last > a:nth-child(1)')
+            sleep(2)                                                  
             next_page_review.click()
         except:
             pass
@@ -108,13 +130,16 @@ def Search_reviews(driver,wbFileName,count):
 
     
 def Search_Only_One_Product(driver,product_name,count):
-
+    sleep(4)
     Products_len = Count_items(driver)
     wbFileName = product_name+''+'.xlsx'
     workbook = Workbook()
     workbook = load_workbook(filename=wbFileName)
+    workbook.create_sheet(title=product_name)
+    workbook.save(wbFileName)
     print(wbFileName)
     sheet = workbook.active
+    workbook['{}'.format(product_name)]['A1'] = 'Prueba'
     count = 1
     i = 1
     print(f'Count: {count}')
@@ -132,7 +157,7 @@ def Search_Only_One_Product(driver,product_name,count):
             product = driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[{}]/div/span/div/div/div[2]/div[2]/div/div/div[1]/h2/a/span'.format(i)).text
             sleep(1)                                                            
             print(product)
-            sheet['A{}'.format(count)] = product
+            workbook['{}'.format(product_name)]['A{}'.format(count)] = product
             workbook.save(wbFileName)
         except:
             pass
@@ -141,16 +166,18 @@ def Search_Only_One_Product(driver,product_name,count):
             new_window = url+'/dp/'+asin
             driver.get(new_window)
             try:
-                sheet['B{}'.format(count)] = new_window
+                workbook['{}'.format(product_name)]['B{}'.format(count)] = new_window
                 workbook.save(wbFileName)
-                reviews = driver.find_element_by_css_selector('#reviews-medley-footer > div:nth-child(2) > a:nth-child(2)')                                             
+                reviews = driver.find_element_by_css_selector('#reviews-medley-footer > div:nth-child(2) > a:nth-child(2)')                                           
                 if reviews is None:
                     print('no comments section')                                         
                 rev_url = reviews.get_attribute('href')
                 driver.execute_script("window.open('{}');".format(rev_url))
                 driver.switch_to.window(driver.window_handles[1])
-                Search_reviews(driver,wbFileName,count)   
-                driver.switch_to.window(driver.windows_handles[0])
+                sleep(4)
+                Search_reviews(driver,wbFileName,count)
+                driver.close()
+                driver.switch_to.window(driver.window_handles[0])
             except:
                 try:
                     reviews = driver.find_element_by_css_selector('.a-link-emphasis')
