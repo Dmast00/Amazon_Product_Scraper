@@ -94,37 +94,40 @@ def Search_reviews(driver,wbFileName,count,Excel_sheet_name):
             try:
                 rating_temp = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(2) > a:nth-child(1)'.format(id))
             except:
-                rating_temp =driver.find_element_by_css_selector('#customer_review_foreign-{}} > div:nth-child(2) > i:nth-child(1)'.format(id))                                                    #customer_review_foreign-R2T9R6QX5MXYB1 > div:nth-child(2) > i:nth-child(1) > span:nth-child(1)
+                rating_temp =driver.find_element_by_css_selector('#customer_review_foreign-{}} > div:nth-child(2) > i:nth-child(1)'.format(id))
                                                                
-            print('No problem in rating')
+            sleep(2)
             rating = rating_temp.get_attribute('title')
-            comment = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)'.format(id)).text                            
+            comment = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(5) > span:nth-child(1) > span:nth-child(1)'.format(id)).text
+                                                                                        
             if comment is None:
                 comment = driver.find_element_by_css_selector('#customer_review-{} > div:nth-child(5) > span:nth-child(1) > span:nth-child(4)'.format(id)).text
-           
-            print('No problem in Comment')
+            sleep(2)
             print(comment)
             workbook['{}'.format(Excel_sheet_name)]['D{}'.format(count)] = rating
-            print('no problem in rating in excel')
+            sleep(1)
             workbook.save(wbFileName)
+            # workbook['{}'.format(Excel_sheet_name)]['C'].alignment = Alignment(wrap_text=True)
             workbook['{}'.format(Excel_sheet_name)]['C{}'.format(count)] = comment
-            print('no problem in commment excel')
+            sleep(1)
             workbook.save(wbFileName)
             count+=1
             sleep(3)
         try:
             next_page_review = driver.find_element_by_css_selector('.a-last > a:nth-child(1)')
+                                                                   
             sleep(2)                                                  
             next_page_review.click()
+            sleep(3)
         except:
             pass
         if next_page_review is None:
             print('No more pages available')
-            
+            return
         Search_reviews(driver,wbFileName,count,Excel_sheet_name)
     except:
         pass
-
+    return
     
 def Search_Only_One_Product(driver,product_name,count):
     sleep(2)
@@ -144,28 +147,32 @@ def Search_Only_One_Product(driver,product_name,count):
 
         try:
             search_asin = driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[{}]'.format(i))
-            asin =search_asin.get_attribute('data-asin')                                        
+                                                        
+            asin = search_asin.get_attribute('data-asin')
+            if asin == '':
+                i +=1
+                continue                                     
         except:                                         
             print('ASIN not found')                                                                           
         
         sleep(2)
         try:
             product = driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[{}]/div/span/div/div/div[2]/div[2]/div/div/div[1]/h2/a/span'.format(i)).text
-                                                    
+                                       
         except:
-            pass   
+            product = driver.find_element_by_css_selector('.widgetId\=search-results_{} > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1) > span:nth-child(1)'.format(i)).text
+                                                                                                    
         try:
+            if product is None:
+                product = driver.find_element_by_css_selector('.widgetId\=search-results_{} > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h2:nth-child(2) > a:nth-child(1) > span:nth-child(1)'.format(i)).text
+                                                                    
+            elif product is None:
+                continue
             try:
                                                     
-                if product is None:
-                    product = driver.find_element_by_css_selector('.widgetId\=search-results_{} > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h2:nth-child(2) > a:nth-child(1) > span:nth-child(1)'.format(i)).text
-                                                                    
-                elif product is None:
-                    product = driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[{}]/div/span/div/div/div/div/div[2]/div[2]/div/div/div[1]/h2/a/span'.format(i)).text                                            
-                elif product is None:
-                    product = 'Not Found'
+                
                 sleep(1)
-                Excel_sheet_name = product[0:10]
+                Excel_sheet_name = product[0:20]
                 print(Excel_sheet_name)
 
                 workbook = load_workbook(filename=wbFileName)
@@ -190,35 +197,14 @@ def Search_Only_One_Product(driver,product_name,count):
                             Search_reviews(driver,wbFileName,count,Excel_sheet_name)
                             driver.close()
                             driver.switch_to.window(driver.window_handles[0])
+                            driver.back()
                     except:
-                        pass    
+                        driver.back()
+                else:
+                    driver.back()
             except:
                 pass
-                # product = 'Not found'
-                # workbook = load_workbook(filename=wbFileName)
-                # workbook.create_sheet(title=Excel_sheet_name)
-                # workbook['{}'.format(Excel_sheet_name)]['A{}'.format(count)] = product
-                # workbook.save(wbFileName)  
-                
-            
-
-            
-                    # try:
-                    #     reviews = driver.find_element_by_css_selector('.a-link-emphasis')
-                    #     if reviews is None:
-                    #         print('no comments section') 
-                    #     else:
-                    #         rev_url = reviews.get_attribute('href')
-                    #         driver.execute_script("window.open('{}');".format(rev_url))
-                    #         driver.switch_to_window(driver.window_handles[1])
-                    #         Search_reviews(driver,wbFileName)
-                    # except:
-                    #     driver.back() 
-            else:
-                driver.back()
-
         except:
-           
             print(i)
             driver.back()
         
