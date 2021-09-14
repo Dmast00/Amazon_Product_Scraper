@@ -16,7 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import InvalidSessionIdException, NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.keys import Keys
 import pandas as pd 
 import re
@@ -33,14 +33,103 @@ def Print_Menu():
     for key in Menu_Options:
         print(key,'--',Menu_Options[key])
 
-def Search_From_Excel():
-    print('Searching from Excel')
-
 def Count_items(driver):
     items =driver.find_elements(By.CSS_SELECTOR,'.s-main-slot div.s-result-item.s-asin.sg-col-0-of-12.sg-col-16-of-20.sg-col')
     # Search for the Asin code and opens the product details page
     products_len =len(items) 
     return products_len
+
+def Search_From_Excel():
+    
+    path_temp = str(input('file name:'))
+    path = path_temp+'.xlsx'
+    workbook = Workbook()
+    wb = load_workbook(path)
+    sheet = wb.active
+    driver = webdriver.Firefox()
+    count = 1
+    
+    for cell in sheet['A']:
+        prod_name = cell.value
+        Excel_new_sheet = prod_name+'.xlsx'
+        wb = openpyxl.Workbook(Excel_new_sheet)
+        wb.save(Excel_new_sheet)
+        driver.get(url)
+        
+        search_bar = driver.find_element_by_id('twotabsearchtextbox')
+        search_bar.send_keys(prod_name)
+
+        search_button = driver.find_element_by_xpath('//*[@id="nav-search-submit-button"]')
+        search_button.click()
+
+        prods_len = Count_items(driver)
+
+        i = 1
+        count = 1
+        exc_cel = 1 
+        while count <= prods_len:
+            
+            sleep(2)
+            try:
+                search_asin = driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[{}]'.format(i))                                      
+                asin = search_asin.get_attribute('data-asin')
+
+                if asin == '':
+                    i +=1
+                    continue                                     
+            except:
+
+                print('ASIN not found')                                                                           
+            
+            sleep(2)
+            try:
+                product = driver.find_element_by_xpath('/html/body/div[1]/div[2]/div[1]/div[1]/div/span[3]/div[2]/div[{}]/div/span/div/div/div[2]/div[2]/div/div/div[1]/h2/a/span'.format(i)).text
+                                        
+            except:
+                product = driver.find_element_by_css_selector('.widgetId\=search-results_{} > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1) > span:nth-child(1)'.format(i)).text
+            try:
+                if product is None:
+                    product = driver.find_element_by_css_selector('.widgetId\=search-results_{} > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h2:nth-child(2) > a:nth-child(1) > span:nth-child(1)'.format(i)).text
+                elif product is None:
+                    continue
+                try:
+                    sheet_name = product[0:25]
+                    sleep(1)
+                    workbook = load_workbook(filename=Excel_new_sheet)
+                    workbook.create_sheet(title=sheet_name)
+                    workbook['{}'.format(sheet_name)]['A{}'.format(exc_cel)] = product
+                    workbook.save(Excel_new_sheet)
+                    count +=1
+                    i+=1
+                    exc_cel+=1
+
+                   
+
+                except:
+                    pass
+            except:
+                driver.back()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def Count_review_items(driver):
     # reviews = driver.find_elements(By.CSS_SELECTOR,'.a-section.review.aok-relative')
@@ -219,7 +308,7 @@ def Search_Only_One_Product(driver,product_name,count):
         Search_Only_One_Product(driver,product_name,count)
         
     except:
-        return
+        pass
     try:
         next_page = driver.find_element_by_css_selector('a.s-pagination-item:nth-child(7)')                                                      
         next_page.click()
