@@ -142,7 +142,7 @@ def Search_Only_One_Product(driver,product_name,count):
     i = 1
     print(f'Count: {count}')
     while i <= Products_len:
-
+        count = 1 
         sleep(2)
 
         try:
